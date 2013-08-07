@@ -1,0 +1,245 @@
+﻿<%-- 
+Name:jqGrid Generator
+Author: sam
+Version: 0.1
+Description: This is table and view generator , It's used by DBGen.cst. If run alonely, You must fill one of SourceTable or SourceView.
+--%>
+<%@ Template Language="C#"%>
+
+<%@ Property Name="SourceTable" Type="SchemaExplorer.TableSchema" Optional="True" Category="Source Table" Description="The source table to generate from." %>
+<%@ Property Name="SourceView" Type="SchemaExplorer.ViewSchema" Optional="True" Category="Source View" Description="The source table to generate from." %>
+
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Assembly Name="System.Collections" %>
+<%@ Assembly Name="System.Text.RegularExpressions" %>
+
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import NameSpace="System.IO" %>
+<%@ Import NameSpace="System.Collections" %>
+<%@ Import NameSpace="System.Collections.Generic" %>
+<%@ Import NameSpace="System.Text.RegularExpressions" %>
+
+<%
+    if (SourceTable == null && SourceView == null)
+    {
+        this.Response.Write("Please fill one of SourceTable or SourceView , SourceTable first!");
+        this.Response.Close();
+        return;
+    }
+        
+%>
+
+//Name: <%=ClassName()%>
+//Author: sam
+//Version: 0.1
+//Description: <%=System.DateTime.Now.ToString()%> Generated for jqGrid.
+
+
+$(function() {
+    <%ColModelGenrator();%>
+	jQuery("#<%=EntityName(SourceName())%>01").jqGrid({
+		url : "<%=EntityName(SourceName())%>Action?func=jqgrid_xx",
+		postData : {},
+		datatype : "json",
+		mtype : "GET",
+		loadui : "disable",
+		height : 'auto',
+		rowNum : 10,
+		rowList : [ 10, 20, 30 ],
+		pager : "#<%=EntityName(SourceName())%>Pager01",
+		viewrecords : true,
+		autowidth : true,
+		sortname : "ID",
+		sortorder : "desc",
+		colNames : <%=EntityName(SourceName())%>ColName,
+		colModel : <%=EntityName(SourceName())%>ColModel,
+		prmNames : {
+			search : "search"
+		}, // (1)
+		jsonReader : {
+			root : "gridModel", // (2)
+			records : "record", // (3)
+			repeatitems : false
+		// (4)
+
+		},
+		caption : "<%=EntityName(SourceName())%>",
+		hidegrid : false,
+		multiselect : true,
+		loadComplete : function(data) {
+			// alert();
+		},
+		loadError : function(xhr, status, error) {
+			alert("net error!");
+		},
+		gridComplete : function() {
+			$(this).prop('p').loadui = 'enable';
+		}
+
+	}).jqGrid('navGrid', '#<%=EntityName(SourceName())%>01', {
+		add : false,
+		edit : false,
+		del : true,
+		view : false,
+		search : false,
+		refresh : true,
+		delfunc : function() {
+			//var id = $("#<%=EntityName(SourceName())%>01").jqGrid('getGridParam', 'selrow');
+			var ids = $("#<%=EntityName(SourceName())%>01").jqGrid('getGridParam', 'selarrrow');
+			var arrs = new Array();
+			for ( var i = 0; i < ids.length; i++) {
+				var rowdata = jQuery("#<%=EntityName(SourceName())%>01").jqGrid(
+						'getRowData', ids[i]);
+				arrs.push(rowdata.bmcIpRange);
+			}
+			if (arrs != null) {
+				$.ajax({
+					type : "get",
+					url : "<%=EntityName(SourceName())%>Action?func=del_xx",
+					data : $.param({
+						ci_id: ci_id,
+						pm_bmc_ip_ranges : arrs
+					}, true),
+					contentType : "text/plain;",
+					beforeSend : function(xhr) {
+					},
+					success : function(r, status) {
+						if (r.Error != undefined) {
+							alert(r);
+							return;
+						} else {
+							//console.log(ids.length);
+							/*
+							for (var i = ids.length - 1; i >= 0; i --) {
+							 $("#<%=EntityName(SourceName())%>01").jqGrid("delRowData", ids[i]);
+							}*/
+							//$("#<%=EntityName(SourceName())%>01").delRowData(id);
+							$("#<%=EntityName(SourceName())%>01").trigger("reloadGrid");
+							return;
+						}
+					},
+					error : function(xhr, status, error) {
+						alert(error);
+					}
+				});
+
+			} else {
+				alert("select a row , please !");
+			}
+		}
+	}, //options
+	{}, // edit options
+	{}, // add options
+	{
+		reloadAfterSubmit : false,
+		jqModal : false,
+		closeOnEscape : true
+	}, // del options
+	{
+		width : 800,
+		height : 250,
+		closeOnEscape : true
+	}, // search options
+	{
+
+	} // view options
+	);
+});
+
+<script runat="template">
+/*
+public override void Render(TextWriter writer)
+{
+    base.Render(writer);//important
+    
+    ArrayList colNames = new ArrayList();
+    ArrayList colModels = new ArrayList();
+   
+    foreach(ColumnSchema cs in SourceTable.Columns) { 
+        colNames.Add("'" + cs.Name + "'");
+        string cm = String.Format(@"{{
+			name : '{0}',
+			index : '{0}',
+            align : 'center'
+        }}", EntityName(cs.Name));
+        colModels.Add(cm);
+    } 
+    writer.WriteLine(String.Format("var {0}_colName", EntityName(SourceName())) + "[" + String.Join(", ", colNames.ToArray())  + "];"); 
+    writer.WriteLine(String.Format("var {0}_colModel",EntityName(SourceName())) + "[" + String.Join(",", colModels.ToArray()) + "];"); 
+}
+*/
+
+private void ColModelGenrator()
+{
+    ArrayList colNames = new ArrayList();
+    ArrayList colModels = new ArrayList();
+    if (SourceTable != null)
+    {    
+        foreach(ColumnSchema cs in SourceTable.Columns) { 
+            colNames.Add("'" + cs.Name + "'");
+            string cm = String.Format(@"{{
+    			name : '{0}',
+    			index : '{0}',
+                align : 'center'
+            }}", EntityName(cs.Name));
+            colModels.Add(cm);
+        } 
+    }
+    else
+    {
+        foreach(ViewColumnSchema cs in SourceView.Columns) { 
+            colNames.Add("'" + cs.Name + "'");
+            string cm = String.Format(@"{{
+    			name : '{0}',
+    			index : '{0}',
+                align : 'center'
+            }}", EntityName(cs.Name));
+            colModels.Add(cm);
+        } 
+    }
+    this.Response.WriteLine(String.Format("var {0}ColName = ", EntityName(SourceName())) + "[" + String.Join(", ", colNames.ToArray())  + "];"); 
+    this.Response.WriteLine(String.Format("var {0}ColModel = ",EntityName(SourceName())) + "[" + String.Join(",", colModels.ToArray()) + "];"); 
+}
+
+private string EntityName(string srcName)
+{
+    string entityName = srcName.ToLower();
+    entityName = Regex.Replace(entityName, @"_\w", delegate(Match match)
+	{
+	    string v = match.ToString();
+        if (v.Length != 2)
+            return v;
+	    return char.ToUpper(v[1]).ToString();
+	});
+    return entityName;
+}
+
+public string ClassName()
+{
+    String className = "";
+    string entityName = EntityName(SourceName());
+    if (entityName.Length > 1)
+    {
+        className = char.ToUpper(entityName[0]) + entityName.Substring(1,entityName.Length - 1);
+    }
+    return className;
+}
+
+private string SourceName()
+{
+    string name = "";
+   
+    if (SourceTable != null)
+    {
+        name = SourceTable.Name;
+    }
+    else if (SourceView != null)
+    {
+        name = SourceView.Name;   
+    }
+   
+    return name;
+}
+</script>

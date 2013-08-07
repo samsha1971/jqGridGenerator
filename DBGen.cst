@@ -1,0 +1,69 @@
+﻿<%-- 
+Name:jqGrid Generator
+Author: sam
+Version: 0.1
+Description: This is database browser, Every table and view in the SourceDatabase will call TableViewGen.cst.
+--%>
+<%@ Template Language="C#"%>
+
+<%@ Property Name="SourceDatabase" Type="SchemaExplorer.DatabaseSchema" Optional="False" Category="Source Database" Description="The source database to generate from." %>
+
+<%@ Assembly Name="SchemaExplorer" %>
+<%@ Assembly Name="System.Data" %>
+
+<%@ Import Namespace="SchemaExplorer" %>
+<%@ Import Namespace="System.Data" %>
+<%@ Import NameSpace="System.IO" %>
+
+<%@ Register Name="TableViewTemplate" Template="TableViewGen.cst" %>
+
+<%
+    if (SourceDatabase == null)
+    {
+        this.Response.Write("Please fill SourceDatabase!");
+        this.Response.Close();
+        return;
+    }
+%>
+
+
+<script runat="template">
+//
+
+public override void Render(TextWriter writer)
+{
+    foreach(TableSchema table in SourceDatabase.Tables)
+    {
+    	TableViewTemplate tvt = this.Create<TableViewTemplate>();
+    	tvt.SourceTable = table;
+        string fileName = String.Format("Files//{0}.js", ClassName(table.Name));
+    	tvt.RenderToFile(new OutputFile(fileName),"./", true);
+    }
+    foreach(ViewSchema view in SourceDatabase.Views)
+	{
+        TableViewTemplate tvt = this.Create<TableViewTemplate>();
+        tvt.SourceView = view;
+        string fileName = String.Format("Files//{0}.js", ClassName(view.Name));
+	    tvt.RenderToFile(new OutputFile(fileName),"./", true);  
+	}
+}
+
+private string ClassName(string srcName)
+{
+    string entityName = srcName.ToLower();
+    entityName = Regex.Replace(entityName, @"_\w", delegate(Match match)
+	{
+	    string v = match.ToString();
+        if (v.Length != 2)
+            return v;
+	    return char.ToUpper(v[1]).ToString();
+	});
+    
+    String className = "";
+    if (entityName.Length > 1)
+    {
+        className = char.ToUpper(entityName[0]) + entityName.Substring(1, entityName.Length - 1);
+    }
+    return className;
+}
+</script>
