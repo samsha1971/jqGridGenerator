@@ -32,6 +32,10 @@ Description: This is database browser, Every table and view in the SourceDatabas
 
 public override void Render(TextWriter writer)
 {
+    if(!Directory.Exists("Files")) 
+    {
+        Directory.CreateDirectory("Files"); 
+    } 
     foreach(TableSchema table in SourceDatabase.Tables)
     {
     	TableViewTemplate tvt = this.Create<TableViewTemplate>();
