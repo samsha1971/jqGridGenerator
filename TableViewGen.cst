@@ -38,6 +38,7 @@ Description: This is table and view generator , It's used by DBGen.cst. If run a
 
 
 $(function() {
+    <%EntityGenrator();%>
     <%ColModelGenrator();%>
 	jQuery("#<%=EntityName(SourceName())%>01").jqGrid({
 		url : "<%=EntityName(SourceName())%>Action?func=jqgrid_xx",
@@ -170,6 +171,24 @@ public override void Render(TextWriter writer)
     writer.WriteLine(String.Format("var {0}_colModel",EntityName(SourceName())) + "[" + String.Join(",", colModels.ToArray()) + "];"); 
 }
 */
+    
+private void EntityGenrator()
+{
+    ArrayList entityNames = new ArrayList();
+    if (SourceTable != null)
+    {    
+        foreach(ColumnSchema cs in SourceTable.Columns) { 
+            entityNames.Add("'" + EntityName(cs.Name) + "' : ''");
+        } 
+    }
+    else
+    {
+        foreach(ViewColumnSchema cs in SourceView.Columns) { 
+           entityNames.Add("'" + EntityName(cs.Name) + "' : ''");
+        } 
+    }
+    this.Response.WriteLine(String.Format("var {0}_entity = ", EntityName(SourceName())) + "{" + String.Join(", ", entityNames.ToArray())  + "};"); 
+}
 
 private void ColModelGenrator()
 {
