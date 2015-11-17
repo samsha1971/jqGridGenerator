@@ -38,6 +38,7 @@ Description: This is table and view generator , It's used by DBGen.cst. If run a
 
 
 $(function() {
+    <%ClassGenrator();%>
     <%EntityGenrator();%>
     <%ColModelGenrator();%>
 	jQuery("#<%=EntityName(SourceName())%>01").jqGrid({
@@ -172,22 +173,40 @@ public override void Render(TextWriter writer)
 }
 */
     
+private void ClassGenrator()
+{
+    ArrayList entityNames = new ArrayList();
+    if (SourceTable != null)
+    {    
+        foreach(ColumnSchema cs in SourceTable.Columns) { 
+            entityNames.Add("this." + EntityName(cs.Name) + " = null");
+        } 
+    }
+    else
+    {
+        foreach(ViewColumnSchema cs in SourceView.Columns) { 
+           entityNames.Add("this." + EntityName(cs.Name) + " = null");
+        } 
+    }
+    this.Response.WriteLine(String.Format("function {0}() ", ClassName()) + "{" + String.Join(";", entityNames.ToArray())  + "};"); 
+}    
+    
 private void EntityGenrator()
 {
     ArrayList entityNames = new ArrayList();
     if (SourceTable != null)
     {    
         foreach(ColumnSchema cs in SourceTable.Columns) { 
-            entityNames.Add("'" + EntityName(cs.Name) + "' : ''");
+            entityNames.Add("'" + EntityName(cs.Name) + "' : null");
         } 
     }
     else
     {
         foreach(ViewColumnSchema cs in SourceView.Columns) { 
-           entityNames.Add("'" + EntityName(cs.Name) + "' : ''");
+           entityNames.Add("'" + EntityName(cs.Name) + "' : null");
         } 
     }
-    this.Response.WriteLine(String.Format("var {0}_entity = ", EntityName(SourceName())) + "{" + String.Join(", ", entityNames.ToArray())  + "};"); 
+    this.Response.WriteLine(String.Format("var {0} = ", EntityName(SourceName())) + "{" + String.Join(", ", entityNames.ToArray())  + "};"); 
 }
 
 private void ColModelGenrator()
